@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Анекдотный Квиз — Супер Весельчак</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Comic Neue', cursive, Arial, sans-serif;
+    background: linear-gradient(135deg, #ffefa3, #ffbf47);
+    height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6b3e00;
+    user-select: none;
+  }
+
+  #quiz-container {
+    background: #fff8dc;
+    border-radius: 25px;
+    padding: 30px 40px;
+    box-shadow: 0 0 25px #ffb800cc;
+    max-width: 650px;
+    width: 95%;
+    text-align: center;
+  }
+
+  #title {
+    font-size: 2.8em;
+    margin-bottom: 15px;
+    color: #ff6600;
+    text-shadow: 2px 2px 3px #cc5200;
+  }
+
+  #level-select {
+    margin-bottom: 25px;
+  }
+
+  .level-btn {
+    background: #ffb84d;
+    border: none;
+    border-radius: 25px;
+    padding: 12px 30px;
+    margin: 0 10px;
+    font-size: 1.4em;
+    color: #663300;
+    cursor: pointer;
+    box-shadow: 0 5px 12px #cc8400aa;
+    transition: background-color 0.3s ease;
+  }
+  .level-btn:hover {
+    background: #ff9400;
+    color: #fff;
+  }
+
+  #question {
+    font-size: 1.8em;
+    margin-bottom: 20px;
+    min-height: 90px;
+  }
+
+  .answer-btn {
+    display: block;
+    margin: 10px auto;
+    background: #ffb84d;
+    border: none;
+    border-radius: 20px;
+    padding: 14px 28px;
+    font-size: 1.4em;
+    color: #663300;
+    cursor: pointer;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 5px 10px #cc8400aa;
+    transition: background-color 0.3s ease, transform 0.15s ease;
+  }
+
+  .answer-btn:hover {
+    background: #ff9400;
+    color: #fff;
+  }
+
+  .answer-btn.correct {
+    background-color: #4CAF50 !important;
+    color: white !important;
+    box-shadow: 0 0 18px #2e7d32;
+  }
+
+  .answer-btn.wrong {
+    background-color: #e53935 !important;
+    color: white !important;
+    box-shadow: 0 0 18px #b71c1c;
+  }
+
+  .answer-btn:active {
+    transform: scale(0.95);
+  }
+
+  #timer {
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #ff4500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  #progress-bar {
+    width: 60%;
+    height: 20px;
+    background: #ffd966;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: inset 0 0 5px #ffb84d;
+  }
+  #progress {
+    height: 100%;
+    background: #ff6600;
+    width: 100%;
+    transition: width 1s linear;
+  }
+
+  #score {
+    font-size: 1.6em;
+    margin-top: 15px;
+    color: #a0522d;
+  }
+
+  #restart-btn {
+    margin-top: 30px;
+    font-size: 1.5em;
+    background: #ff6600;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 15px 40px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px #cc5200;
+    transition: background-color 0.3s ease;
+  }
+
+  #restart-btn:hover {
+    background: #cc5200;
+  }
+
+  #final-gif {
+    max-width: 320px;
+    margin-top: 20px;
+    border-radius: 20px;
+    box-shadow: 0 0 20px #ff660088;
+  }
+</style>
+</head>
+<body>
+
+<div id="quiz-container">
+  <div id="title">Анекдотный Квиз — Супер Весельчак</div>
+
+  <div id="level-select">
+    <button class="level-btn" data-level="easy">Лёгкий</button>
+    <button class="level-btn" data-level="medium">Средний</button>
+    <button class="level-btn" data-level="hard">Сложный</button>
+  </div>
+
+  <div id="timer" style="display:none;">
+    Время: <span id="time-left">10</span> секунд
+    <div id="progress-bar"><div id="progress"></div></div>
+  </div>
+
+  <div id="question" style="display:none;">Вопрос</div>
+  <div id="answers"></div>
+  <div id="score"></div>
+  <button id="restart-btn" style="display:none;">Начать заново</button>
+
+  <img id="final-gif" style="display:none;" alt="Весёлая гифка" src="https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" />
+</div>
+
+<!-- Звуки -->
+<audio id="laugh-sound" src="https://actions.google.com/sounds/v1/human/laugh_short.ogg"></audio>
+<audio id="fail-sound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg"></audio>
+
+<script>
+  // Вопросы по уровням
+  const quizData = {
+    easy: [
+      {
+        question: "Почему слон не прячется в холодильнике?",
+        answers: [
+          "Потому что холодильник слишком маленький",
+          "Потому что слон боится холода",
+          "Потому что холодильник занят зайцем",
+          "Потому что слон не умеет открывать двери"
+        ],
+        correct: 0
+      },
+      {
+        question: "Что сказал ноль восьмёрке?",
+        answers: [
+          "Ты толстый!",
+          "Классный поясок!",
+          "Привет, друг!",
+          "Пойдем гулять!"
+        ],
+        correct: 1
+      },
+      {
+        question: "Почему компьютер холодный?",
+        answers: [
+          "Потому что он открывает много окон",
+          "Потому что у него вентилятор",
+          "Потому что он в холодильнике",
+          "Потому что он замёрз"
+        ],
+        correct: 0
+      },
+      {
+        question: "Почему коты в интернете лапают мышку?",
+        answers: [
+          "Потому что они любопытные",
+          "Потому что им скучно",
+          "Потому что это весело",
+          "Потому что они настоящие охотники"
+        ],
+        correct: 3
+      },
+      {
+        question: "Почему у морковки нет друзей?",
+        answers: [
+          "Потому что она слишком корневая",
+          "Потому что она острая",
+          "Потому что она сладкая",
+          "Потому что она зелёная"
+        ],
+        correct: 0
+      }
+    ],
+    medium: [
+      {
+        question: "Что общего у лягушки и компьютера?",
+        answers: [
+          "Оба умеют плавать",
+          "Оба любят квакать",
+          "Оба быстро бегают",
+          "Оба любят игры"
+        ],
+        correct: 1
+      },
+      {
+        question: "Почему программист не плачет?",
+        answers: [
+          "Потому что у него нет чувств… кроме багов",
+          "Потому что он всегда счастлив",
+          "Потому что у него нет времени",
+          "Потому что он работает на Windows"
+        ],
+        correct: 0
+      },
+      {
+        question: "Почему книга боится читать газету?",
+        answers: [
+          "Потому что газета пугает новостями",
+          "Потому что газета грязная",
+          "Потому что книга устала",
+          "Потому что книга любит фильмы"
+        ],
+        correct: 0
+      },
+      {
+        question: "Что сказал карандаш ручке?",
+        answers: [
+          "Я лучше рисую",
+          "Не рискуй, я твой конкурент",
+          "Давай дружить",
+          "Я острее тебя"
+        ],
+        correct: 1
+      },
+      {
+        question: "Почему слон не ест шоколад?",
+        answers: [
+          "Потому что он на диете",
+          "Потому что он аллергик",
+          "Потому что он не любит сладкое",
+          "Потому что он боится зубов"
+        ],
+        correct: 2
+      }
+    ],
+    hard: [
+      {
+        question: "Почему программисты путают Хэллоуин и Рождество?",
+        answers: [
+          "Потому что OCT 31 = DEC 25",
+          "Потому что любят костюмы",
+          "Потому что они дети",
+          "Потому что это один и тот же праздник"
+        ],
+        correct: 0
+      },
+      {
+        question: "Почему Java разработчики часто путают мальчиков и девочек?",
+        answers: [
+          "Потому что у них много классов",
+          "Потому что у них нет пола",
+          "Потому что они видят только объекты",
+          "Потому что они живут в IDE"
+        ],
+        correct: 2
+      },
+      {
+        question: "Почему кошки любят сидеть на клавиатуре?",
+        answers: [
+          "Потому что любят тепло",
+          "Потому что хотят писать код",
+          "Потому что хотят мешать работе",
+          "Потому что они хакеры"
+        ],
+        correct: 0
+      },
+      {
+        question: "Что сказал хакер на дне рождения?",
+        answers: [
+          "С днём байта!",
+          "Пойдем взломаем торт!",
+          "Желаю багов поменьше!",
+          "Пусть вирусы обходят"
+        ],
+        correct: 0
+      },
+      {
+        question: "Почему программисты не плавают в море?",
+        answers: [
+          "Потому что боятся утонуть в коде",
+          "Потому что не любят волн",
+          "Потому что вода не компилируется",
+          "Потому что они боятся багов"
+        ],
+        correct: 2
+      }
+    ]
+  };
+
+  const levelSelect = document.getElementById('level-select');
+  const questionEl = document.getElementById('question');
+  const answersEl = document.getElementById('answers');
+  const timerEl = document.getElementById('timer');
+  const timeLeftEl = document.getElementById('time-left');
+  const progressBar = document.getElementById('progress');
+  const scoreEl = document.getElementById('score');
+  const restartBtn = document.getElementById('restart-btn');
+  const finalGif = document.getElementById('final-gif');
+
+  const laughSound = document.getElementById('laugh-sound');
+  const failSound = document.getElementById('fail-sound');
+
+  let currentQuestion = 0;
+  let score = 0;
+  let timeLeft = 10;
+  let timerId = null;
+  let acceptingAnswers = false;
+  let currentLevel = null;
+  let questions = [];
+
+  // Выбор уровня
+  levelSelect.addEventListener('click', e => {
+    if(!e.target.classList.contains('level-btn')) return;
+    currentLevel = e.target.dataset.level;
+    questions = quizData[currentLevel];
+    levelSelect.style.display = 'none';
+    scoreEl.textContent = '';
+    finalGif.style.display = 'none';
+    restartBtn.style.display = 'none';
+    questionEl.style.display = 'block';
+    timerEl.style.display = 'flex';
+    loadQuestion();
+  });
+
+  function loadQuestion() {
+    acceptingAnswers = true;
+    timeLeft = 10;
+    updateTimerDisplay();
+    const q = questions[currentQuestion];
+    questionEl.textContent = q.question;
+    answersEl.innerHTML = '';
+    q.answers.forEach((answer, idx) => {
+      const btn = document.createElement('button');
+      btn.classList.add('answer-btn');
+      btn.textContent = answer;
+      btn.dataset.index = idx;
+      answersEl.appendChild(btn);
+    });
+    startTimer();
+  }
+
+  function startTimer() {
+    progressBar.style.width = '100%';
+    clearInterval(timerId);
+    timerId = setInterval(() => {
+      timeLeft--;
+      updateTimerDisplay();
+      progressBar.style.width = `${(timeLeft/10)*100}%`;
+      if(timeLeft <= 0) {
+        clearInterval(timerId);
+        acceptingAnswers = false;
+        showCorrectAnswer();
+        setTimeout(nextQuestion, 2000);
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay() {
+    timeLeftEl.textContent = timeLeft;
+  }
+
+  answersEl.addEventListener('click', e => {
+    if(!acceptingAnswers) return;
+    if(!e.target.classList.contains('answer-btn')) return;
+
+    acceptingAnswers = false;
+    clearInterval(timerId);
+
+    const selectedIdx = +e.target.dataset.index;
+    const correctIdx = questions[currentQuestion].correct;
+
+    if(selectedIdx === correctIdx) {
+      score++;
+      laughSound.currentTime = 0;
+      laughSound.play();
+    } else {
+      failSound.currentTime = 0;
+      failSound.play();
+    }
+
+    showCorrectAnswer(selectedIdx);
+    setTimeout(nextQuestion, 2000);
+  });
+
+  function showCorrectAnswer(selectedIdx = null) {
+    const buttons = answersEl.querySelectorAll('.answer-btn');
+    buttons.forEach(btn => {
+      const idx = +btn.dataset.index;
+      if(idx === questions[currentQuestion].correct) {
+        btn.classList.add('correct');
+      } else if(idx === selectedIdx) {
+        btn.classList.add('wrong');
+      }
+      btn.disabled = true;
+    });
+  }
+
+  function nextQuestion() {
+    currentQuestion++;
+    if(currentQuestion >= questions.length) {
+      endQuiz();
+    } else {
+      loadQuestion();
+    }
+  }
+
+  function endQuiz() {
+    questionEl.style.display = 'none';
+    answersEl.innerHTML = '';
+    timerEl.style.display = 'none';
+    scoreEl.textContent = `Ты набрал ${score} из ${questions.length} очков! 🎉`;
+    restartBtn.style.display = 'inline-block';
+    finalGif.style.display = 'block';
+  }
+
+  restartBtn.addEventListener('click', () => {
+    currentQuestion = 0;
+    score = 0;
+    scoreEl.textContent = '';
+    restartBtn.style.display = 'none';
+    finalGif.style.display = 'none';
+    levelSelect.style.display = 'block';
+    questionEl.style.display = 'none';
+    timerEl.style.display = 'none';
+    answersEl.innerHTML = '';
+  });
+</script>
+
+</body>
+</html>
